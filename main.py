@@ -1,9 +1,18 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response, Path, Header, Depends
 from fastapi import status
 from models import Pokemon
-from typing import Optional
+from typing import Optional, Any, List
+from time import sleep
 
-app = FastAPI()
+def fake_db():
+    try:
+        print('abrindo conexão com banco de dados')
+        sleep(1)
+    finally:
+        print('fechando conexão com banco de dados')
+        sleep(1)
+
+app = FastAPI(title='API da aula de Web Development', version='0.0.1', description='API para estudo de FastAPI')
 
 
 pokemons = {
@@ -25,12 +34,12 @@ pokemons = {
 async def mensagem():
     return {"mensagem": 'Deu certo :P'}
 
-@app.get('/pokemon')
-async def get_pokemons():
+@app.get('/pokemon', description='Retorna uma lista dos Pokemons cadastrados ou uma lista vazia', response_model=List[Pokemon] )
+async def get_pokemons(db: Any = Depends(fake_db)):
     return pokemons
 
 @app.get('/pokemon/{pokemon_id}')
-async def get_pokemons(pokemon_id:int):
+async def get_pokemons(pokemon_id:int = Path(...,title='Pegar Pokemon pelo ID', gt=0, lt=3, description='Selecionar o Pokemon pelo ID, onde o ID deve ser 1 ou 2')):
     if pokemon_id not in pokemons:
         raise HTTPException(status_code=404, detail="Pokemon not found")
     pokemon = pokemons[pokemon_id]
@@ -71,6 +80,47 @@ async def del_pokemon(pokemon_id: int, pokemon: Pokemon):
         return {'message: f"Deletado o Pokemon {pokemon_id}"'}
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Não existe um pokemon com o id {pokemon_id}')
+    
+@app.get('/calculadora/soma')
+async def calcular(n1: int, n2:int, n3:Optional[int] = None):
+    if n3 != None:
+        soma = n1 + n2 + n3
+        return {'Resultado': soma}
+    else:
+        soma = n1 + n2
+        return {'Resultado': soma}
+    
+@app.get('/calculadora/subtracao')
+async def calcular(n1: int, n2:int, n3:Optional[int] = None):
+    if n3 != None:
+        subtracao = n1 - n2 - n3
+        return {'Resultado': subtracao}
+    else:
+        subtracao = n1 - n2
+        return {'Resultado': subtracao}
+    
+@app.get('/calculadora/multiplicacao')
+async def calcular(n1: int, n2:int, n3:Optional[int] = None):
+    if n3 != None:
+        multiplicacao = n1 * n2 * n3
+        return {'Resultado': multiplicacao}
+    else:
+        multiplicacao = n1 * n2
+        return {'Resultado': multiplicacao}
+    
+@app.get('/calculadora/divisao')
+async def calcular(n1: int, n2:int, n3:Optional[int] = None):
+    if n3 != None:
+        divisao = (n1 / n2) / n3
+        return {'Resultado': divisao}
+    else:
+        divisao = n1 / n2
+        return {'Resultado': divisao}
+    
+@app.get('/headerEx')
+async def headerEx(isabelli: str = Header(..., title='usando header', description='esse é um exemplo de como usar o header')):
+    return {f'Isabelli': {isabelli}}
+
 
 if __name__ == '__main__':
     import uvicorn 
